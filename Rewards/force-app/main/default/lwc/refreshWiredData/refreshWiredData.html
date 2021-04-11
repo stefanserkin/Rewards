@@ -1,0 +1,10 @@
+<template>
+    <lightning-card title={pageTitle}>
+        <lightning-button variant="destructive" slot="actions" label="Delete Rewards Event" icon-name="utility:delete" onclick={deleteRecord}></lightning-button> 
+        <!-- Recent Rewards Events datatable -->
+        <lightning-datatable 
+        data={rewardsEventList} columns={cols} key-field="Id" 
+        max-row-selection="1" onrowselection={handleSelection} >
+        </lightning-datatable>
+    </lightning-card>
+</template>
