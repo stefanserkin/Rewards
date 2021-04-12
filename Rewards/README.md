@@ -4,4 +4,4 @@
 
 ## Rewards Event Handler
 
-### Rewards Event Trigger
+## Rewards Event Trigger
