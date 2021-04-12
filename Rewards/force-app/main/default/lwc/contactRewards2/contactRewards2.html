@@ -1,5 +1,10 @@
 <template>
-    <lightning-card title={pageTitle}>
+    <div class="container">
+    <lightning-card>
+        <h3 slot="title">
+            <img src={rewardsIcon} alt="Rewards Icon" class="customIcon">
+            {pageTitle}
+        </h3>
     
         <template if:false={isActive}>
             <div class="slds-align_absolute-center">
@@ -10,25 +15,41 @@
         <template if:true={isActive}>
 
             <!-- Buttons -->
-            <div class="slds-align_absolute-center">
-                <lightning-button variant="destructive" label="Disable Rewards Account" value="hide" onclick={handleDeactivate} class="slds-m-left_x-small">
-                </lightning-button>
-                <lightning-button variant="brand" label="Redeem Points" value="redeem" onclick={handleRedeem} class="slds-m-left_x-small">
-                </lightning-button>
-                <lightning-button variant="brand-outline" label="Issue Add-Hoc Points" value="adhoc" onclick={handleAdhoc} class="slds-m-left_x-small">
-                </lightning-button>
-                <lightning-button variant="brand-outline" label="View Recent Points" value="adhoc" onclick={handleTable} class="slds-m-left_x-small">
-                </lightning-button>
-                <lightning-button variant="destructive" label="Delete Event" value="delete" icon-name="utility:delete" onclick={deleteRecord} class="slds-m-left_x-small">
-                </lightning-button>
+            <div class="c-container slds-align_absolute-center">
+                <lightning-layout horizontal-align="spread">
+                    <lightning-layout-item padding="around-small">
+                        <lightning-button variant="destructive-text" label="Deactivate Account" value="hide" onclick={handleDeactivate} class="slds-m-left_x-small">
+                        </lightning-button>
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+                        
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+                        <lightning-button variant="brand" label="Redeem Points" value="redeem" onclick={handleRedeem} class="slds-m-left_x-small">
+                        </lightning-button>
+                        <lightning-button variant="brand" label="Add Points" value="adhoc" onclick={handleAdhoc} class="slds-m-left_x-small">
+                        </lightning-button>
+                        <lightning-button variant="brand-outline" label="Recent Activity" value="adhoc" onclick={handleTable} class="slds-m-left_x-small">
+                        </lightning-button>
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+                        <lightning-button variant="destructive-text" label="Delete Event" value="delete" icon-name="utility:delete" onclick={deleteRecord} class="slds-m-left_x-small">
+                        </lightning-button>
+                    </lightning-layout-item>
+                </lightning-layout>
             </div>
 
             <!-- Recent Rewards Events datatable -->
             <template if:true={isTable}>
-                <lightning-datatable 
-                data={rewardsEventList} columns={cols} key-field="Id" 
-                max-row-selection="1" onrowselection={handleSelection} >
-                </lightning-datatable>
+                <lightning-card title="Recent Activity">
+                    <lightning-datatable 
+                    data={rewardsEventList} columns={cols} key-field="Id" 
+                    max-row-selection="1" onrowselection={handleSelection} >
+                    </lightning-datatable>
+                </lightning-card>
             </template>
 
             <!-- Ad-Hoc Rewards Event creation -->
@@ -64,4 +85,5 @@
 
         </template>
     </lightning-card>
+    </div>
 </template>

@@ -1,9 +1,13 @@
+/* *
+* Created by Stefan Serkin on March 27, 2021
+* */
 import { LightningElement, wire, api, track } from 'lwc';
 import { ShowToastEvent } from 'lightning/platformShowToastEvent';
 import { refreshApex } from '@salesforce/apex';
 import { createRecord } from 'lightning/uiRecordApi';
 import { deleteRecord } from 'lightning/uiRecordApi';
 import { reduceErrors } from 'c/ldsUtils';
+import REWARDS_ICON from '@salesforce/resourceUrl/rewardsIcon';
 import activateRewards from '@salesforce/apex/RewardsEventController.activateRewards';
 
 import REWARDSEVENT_OBJECT from '@salesforce/schema/Rewards_Event__c';
@@ -47,6 +51,7 @@ export default class ContactRewards extends LightningElement {
     @track isAdhoc = false;
     @track isRedeem = false;
     @track pageTitle = 'JCCSF Rewards';
+    rewardsIcon = REWARDS_ICON;
 
     @wire(getContactRewardsEvents, { recordId: '$recordId'}) reList(result) {
         this.wiredRewardsEventList = result;
@@ -91,7 +96,7 @@ export default class ContactRewards extends LightningElement {
         this.isTable = true;
         this.isAdhoc = false;
         this.isRedeem = false;
-        return refreshApex(this.wiredRewardsEventsResult);
+        refreshApex(this.wiredRewardsEventList);
 
     }
     
