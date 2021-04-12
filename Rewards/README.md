@@ -1,7 +1,7 @@
 # Rewards
-https://youtu.be/ObGVWubzRqs
 
 ## Contact Rewards Component (LWC)
+https://youtu.be/ObGVWubzRqs
 
 ## Rewards Event Handler
 
