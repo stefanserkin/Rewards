@@ -1,4 +1,6 @@
-# Contact Rewards LWC
+# Rewards
+
+## Contact Rewards Component (LWC)
 
 ## Rewards Event Handler
 
