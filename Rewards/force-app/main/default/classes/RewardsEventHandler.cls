@@ -87,6 +87,7 @@ public without sharing class RewardsEventHandler {
         // Get contacts and related rewards events
         List<Contact> lstContacts = [SELECT Id,
                                             Rewards_Points__c,
+                                            Active_Rewards_Account__c,
                                             (SELECT Id,
                                                     Type__c,
                                                     Points__c,
@@ -94,7 +95,9 @@ public without sharing class RewardsEventHandler {
                                                FROM Rewards_Events__r
                                               ORDER BY Date__c DESC)
                                        FROM Contact
-                                      WHERE Id IN :setContactIds];
+                                      WHERE Id IN :setContactIds
+                                        AND Active_Rewards_Account__c = true
+                                      LIMIT 200];
         
         for (Contact ct : lstContacts) {
             // Reset balance to zero
@@ -114,9 +117,40 @@ public without sharing class RewardsEventHandler {
             ct.Rewards_Points__c = pointsBalance;
 
         }
+        if (!lstContacts.isEmpty()) {
+            update lstContacts;
+        }
 
-        update lstContacts;
-        
+    }
+
+    public static void removePointsHistory(List<Contact> ctsInTrigger, Map<Id, Contact> ctOldMapInTrigger) {
+
+        System.debug('Accessed removePointsHistory method');
+
+        Set<Id> ctIds = new Set<Id>();
+        for (Contact ct : ctsInTrigger) {
+            Boolean oldIsActive = ctOldMapInTrigger.get(ct.Id).Active_Rewards_Account__c;
+            Boolean newIsActive = ct.Active_Rewards_Account__c;
+
+            if (!newIsActive && oldIsActive) {
+                ctIds.add(ct.Id);
+                System.debug('Contact added: ' + ct.Id);
+            }
+            
+        }
+
+        for (List<Rewards_Event__c> reList : [SELECT Id 
+                                                FROM Rewards_Event__c 
+                                               WHERE Contact__c IN :ctIds])
+        {
+            List<Rewards_Event__c> resToDelete = new List<Rewards_Event__c>();
+            for (Rewards_Event__c re : reList) {
+                resToDelete.add(re);
+            }
+            System.debug('Amount of res to delete: ' + resToDelete.size());
+            delete resToDelete;
+
+        }
     }
 
 }
