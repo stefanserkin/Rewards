@@ -10,7 +10,9 @@ public without sharing class RewardsEventHandler {
         Set<Id> ctIds = new Set<Id>();
         
         for (Rewards_Event__c re : resInTrigger) {
-            ctIds.add(re.Contact__c);
+            if (re.Active__c == true) {
+                ctIds.add(re.Contact__c);
+            }
         }
         // Get contacts
         List<Contact> ctList = [SELECT Id,
@@ -93,6 +95,7 @@ public without sharing class RewardsEventHandler {
                                                     Points__c,
                                                     Points_Balance__c
                                                FROM Rewards_Events__r
+                                              WHERE Active__c = true
                                               ORDER BY Date__c DESC)
                                        FROM Contact
                                       WHERE Id IN :setContactIds
@@ -125,7 +128,10 @@ public without sharing class RewardsEventHandler {
 
     public static void removePointsHistory(List<Contact> ctsInTrigger, Map<Id, Contact> ctOldMapInTrigger) {
 
-        System.debug('Accessed removePointsHistory method');
+        String redemptionRecTypeId = Schema.SObjectType.Rewards_Event__c.getRecordTypeInfosByName().get('Redemption').getRecordTypeId();
+
+        List<Rewards_Event__c> lstResToInsert = new List<Rewards_Event__c>();
+        List<Rewards_Event__c> lstResToUpdate = new List<Rewards_Event__c>();
 
         Set<Id> ctIds = new Set<Id>();
         for (Contact ct : ctsInTrigger) {
@@ -134,23 +140,56 @@ public without sharing class RewardsEventHandler {
 
             if (!newIsActive && oldIsActive) {
                 ctIds.add(ct.Id);
-                System.debug('Contact added: ' + ct.Id);
+            }
+        }
+
+        // Get contacts with rewards events to calculate total for equalizing event
+        List<Contact> lstContacts = [SELECT Id,
+                                            Rewards_Points__c,
+                                            Active_Rewards_Account__c,
+                                            (SELECT Id,
+                                                    Type__c,
+                                                    Points__c,
+                                                    Points_Balance__c
+                                               FROM Rewards_Events__r
+                                              WHERE Active__c = true
+                                              ORDER BY Date__c DESC)
+                                       FROM Contact
+                                      WHERE Id IN :ctIds];
+        for (Contact ct : lstContacts) {
+            // Reset balance to zero
+            Decimal pointsBalance = 0;
+            // Add up rewards events
+            for (Rewards_Event__c re : ct.Rewards_Events__r) {
+                if (re.Type__c == 'Award') {
+                    pointsBalance += re.Points__c;
+                } else if (re.Type__c == 'Redemption') {
+                    pointsBalance -= re.Points__c;
+                }
+                re.Active__c = false;
+                lstResToUpdate.add(re);
             }
             
-        }
+            // Create equalizing record
+            Rewards_Event__c reEqualizer = new Rewards_Event__c();
+            reEqualizer.Points__c = pointsBalance;
+            reEqualizer.Description__c = 'Account Deactivated';
+            reEqualizer.RecordTypeId = redemptionRecTypeId;
+            reEqualizer.Active__c = false;
+            reEqualizer.Contact__c = ct.Id;
 
-        for (List<Rewards_Event__c> reList : [SELECT Id 
-                                                FROM Rewards_Event__c 
-                                               WHERE Contact__c IN :ctIds])
-        {
-            List<Rewards_Event__c> resToDelete = new List<Rewards_Event__c>();
-            for (Rewards_Event__c re : reList) {
-                resToDelete.add(re);
-            }
-            System.debug('Amount of res to delete: ' + resToDelete.size());
-            delete resToDelete;
+            lstResToInsert.add(reEqualizer);
 
         }
+        
+        if (!lstResToInsert.isEmpty()) {
+            insert lstResToInsert;
+        }
+        if (!lstResToUpdate.isEmpty()) {
+            update lstResToUpdate;
+        }
+        
+        
     }
 
 }

@@ -10,7 +10,6 @@ import { updateRecord } from 'lightning/uiRecordApi';
 import { deleteRecord } from 'lightning/uiRecordApi';
 import { reduceErrors } from 'c/ldsUtils';
 import REWARDS_ICON from '@salesforce/resourceUrl/rewardsIcon';
-// import activateRewards from '@salesforce/apex/RewardsEventController.activateRewards';
 
 import REWARDSEVENT_OBJECT from '@salesforce/schema/Rewards_Event__c';
 import POINTS_FIELD from '@salesforce/schema/Rewards_Event__c.Points__c';
@@ -18,6 +17,7 @@ import DESCRIPTION_FIELD from '@salesforce/schema/Rewards_Event__c.Description__
 import EVENTCONTACT_FIELD from '@salesforce/schema/Rewards_Event__c.Contact__c';
 import REWARD_FIELD from '@salesforce/schema/Rewards_Event__c.Reward__c';
 import STATUS_FIELD from '@salesforce/schema/Rewards_Event__c.Status__c';
+import ACTIVEEVENT_FIELD from '@salesforce/schema/Rewards_Event__c.Active__c';
 import RELATEDID_FIELD from '@salesforce/schema/Rewards_Event__c.Related_Entity_Id__c';
 import REDEMPTION_RECORDTYPEID_FIELD from '@salesforce/schema/Rewards_Event__c.RecordTypeId';
 import ID_FIELD from '@salesforce/schema/Contact.Id';
@@ -25,10 +25,11 @@ import ACTIVEREWARDS_FIELD from '@salesforce/schema/Contact.Active_Rewards_Accou
 import CTPOINTS_FIELD from '@salesforce/schema/Contact.Rewards_Points__c';
 import CTNAME_FIELD from '@salesforce/schema/Contact.FirstName';
 
-//import getRewards from '@salesforce/apex/RewardsController.getRewards';
+// import getRewards from '@salesforce/apex/RewardsController.getRewards';
 import getEligibleRewards from '@salesforce/apex/RewardsController.getEligibleRewards';
 import getIneligibleRewards from '@salesforce/apex/RewardsController.getIneligibleRewards';
 import getContactRewardsEvents from '@salesforce/apex/RewardsEventController.getContactRewardsEvents';
+import getContactInactiveRewardsEvents from '@salesforce/apex/RewardsEventController.getContactInactiveRewardsEvents';
 const COLS = [
     { label: 'Date', fieldName: 'Date__c', initialWidth: 210, type: 'date', typeAttributes:{
         year: "numeric",
@@ -45,17 +46,19 @@ const COLS = [
 
 export default class ContactRewards extends LightningElement {
     @api recordId;
+    @api pageTitle = 'Rewards';
     rewardsIcon = REWARDS_ICON;
     cols = COLS;
     // Defaults and navigation
     @track isActive = false;
     @track isTable = true;
+    @track isInactiveTable = false;
     @track isAdhoc = false;
     @track isRedeem = false;
+    @track isLoading = false;
     // For modal
     @track modalHeader = '';
     @track modalBody = '';
-    @track pageTitle = 'JCCSF Rewards';
     @track isModalOpen = false;
     @track isModalActivate = false;
     @track isModalDeactivate = false;
@@ -63,20 +66,24 @@ export default class ContactRewards extends LightningElement {
     @track selectedRecord;
     @track selectedReward;
     @track rewardsEventList = [];
+    @track inactiveRewardsEventList = [];
     @track error;
     @track wiredRewardsEventList = [];
+    @track wiredInactiveRewardsEventList = [];
     @track ctPoints = '';
     @track ctName = '';
     // For ad-hoc rewards event creation values
     @track rewardsEventId;
     @track points = '';
     @track description = '';
+
     rewardsEventStatus = 'Pending';
     redemptionRecordTypeId = '0127f000000GsSLAA0';
     rewards;
     wiredRewardsResult;
     ineligibleRewards;
     wiredIneligibleRewardsResult;
+
 /*
     @wire(getRewards)
     wiredRewards(result) {
@@ -96,7 +103,7 @@ export default class ContactRewards extends LightningElement {
 
         if (result.data) {
             this.rewards = result.data;
-            this.error = undefined;
+            this.error = null;
         } else if (result.error) {
             this.error = result.error;
             this.rewards = undefined;
@@ -137,6 +144,9 @@ export default class ContactRewards extends LightningElement {
     get contactAndPointsLabel() {
         return `${this.ctName}'s Rewards Points: ${this.ctPoints}`;
     }
+    get contactActivationMessage() {
+        return `${this.ctName} will now begin earning points for eligible events.`;
+    }
 
     @wire(getContactRewardsEvents, { recordId: '$recordId'}) reList(result) {
         this.wiredRewardsEventList = result;
@@ -149,15 +159,34 @@ export default class ContactRewards extends LightningElement {
             this.rewardsEventList = [];
         }
     }
+    
+    @wire(getContactInactiveRewardsEvents, { recordId: '$recordId'}) inactiveReList(result) {
+        this.wiredInactiveRewardsEventList = result;
+    
+        if (result.data) {
+            this.inactiveRewardsEventList = result.data;
+            this.error = undefined;
+        } else if (result.error) {
+            this.error = result.error;
+            this.inactiveRewardsEventList = [];
+        }
+    }
+
+    handleInactivateChange(event) {
+        this.isInactiveTable = event.target.checked;
+        refreshApex(this.wiredInactiveRewardsEventList);
+        refreshApex(this.wiredRewardsEventList);
+    }
 
     // Handle buttons onclick
     handleActivate(){
-        this.modalHeader = 'Rewards Account Activated!';
-        this.modalBody = 'This contact will now begin earning points for eligible events.';
-        this.isModalActivate = true;
-        this.isModalRedeem = false;
-        this.isModalDeactivate = false;
-        this.isModalOpen = true;
+        this.isActive = true;
+        this.isTable = true;
+        this.isAdhoc = false;
+        this.isRedeem = false;
+        this.isModalOpen = false;
+
+        this.isLoading = true;
 
         const fields = {};
         fields[ID_FIELD.fieldApiName] = this.recordId;
@@ -168,12 +197,16 @@ export default class ContactRewards extends LightningElement {
                     .then(() => {
                         this.dispatchEvent(
                             new ShowToastEvent({
-                                title: 'Success',
-                                message: 'Contact updated',
+                                title: 'Rewards Account Activated!',
+                                message: this.contactActivationMessage,
                                 variant: 'success'
                             })
                         );
-                        // Display fresh data in the form
+                        this.isLoading = false;
+                        // Display fresh data
+                        refreshApex(this.wiredRewardsEventList);
+                        refreshApex(this.wiredRewardsResult);
+                        refreshApex(this.wiredIneligibleRewardsResult);
                         return refreshApex(this.contact);
                     })
                     .catch(error => {
@@ -184,18 +217,9 @@ export default class ContactRewards extends LightningElement {
                                 variant: 'error'
                             })
                         );
+                        this.isLoading = false;
                     });
-    }
 
-    closeActivateModal() {
-        this.isActive = true;
-        this.isTable = true;
-        this.isAdhoc = false;
-        this.isRedeem = false;
-        this.isModalOpen = false;
-        refreshApex(this.wiredRewardsEventList);
-        refreshApex(this.wiredRewardsResult);
-        refreshApex(this.wiredIneligibleRewardsResult);
     }
 
     handleDeactivate(){
@@ -212,6 +236,7 @@ export default class ContactRewards extends LightningElement {
     }
 
     closeDeactivateModal() {
+        this.isLoading = true;
         this.isActive = false;
         this.isTable = false;
         this.isAdhoc = false;
@@ -228,10 +253,11 @@ export default class ContactRewards extends LightningElement {
                         this.dispatchEvent(
                             new ShowToastEvent({
                                 title: 'Success',
-                                message: 'Contact updated',
+                                message: 'Rewards Account has been deactivated',
                                 variant: 'success'
                             })
                         );
+                        this.isLoading = false;
                         return refreshApex(this.contact);
                     })
                     .catch(error => {
@@ -242,6 +268,7 @@ export default class ContactRewards extends LightningElement {
                                 variant: 'error'
                             })
                         );
+                        this.isLoading = false;
                     });
         refreshApex(this.wiredRewardsEventList);
         refreshApex(this.wiredRewardsResult);
@@ -289,6 +316,7 @@ export default class ContactRewards extends LightningElement {
     }
 
     createPoints() {
+        this.isLoading = true;
         this.isAdhoc = false;
         this.isTable = true;
         const fields = {};
@@ -302,13 +330,14 @@ export default class ContactRewards extends LightningElement {
                 this.dispatchEvent(
                     new ShowToastEvent({
                         title: 'Success',
-                        message: 'Rewards Event created: {rewardsEventId}',
+                        message: 'Rewards Event created',
                         variant: 'success'
                     })
                 );
                 refreshApex(this.wiredRewardsEventList);
                 refreshApex(this.wiredRewardsResult);
                 refreshApex(this.wiredIneligibleRewardsResult);
+                this.isLoading = false;
             })
             .catch((error) => {
                 this.dispatchEvent(
@@ -318,6 +347,7 @@ export default class ContactRewards extends LightningElement {
                         variant: 'error'
                     })
                 );
+                this.isLoading = false;
             });
     }
 
@@ -351,7 +381,7 @@ export default class ContactRewards extends LightningElement {
     }
 
     handleIneligibleRewardSelection() {
-        alert('Looks like some more points are needed before this reward can be redeemed.');
+        alert('More points are needed to unlock this reward.');
     }
 
     closeRedeemModal() {
@@ -364,6 +394,7 @@ export default class ContactRewards extends LightningElement {
     }
 
     redeemReward() { 
+        this.isLoading = true;
         this.isRedeem = false;
         this.isTable = true;
         const fields = {};
@@ -386,8 +417,10 @@ export default class ContactRewards extends LightningElement {
                     })
                 );
                 refreshApex(this.wiredRewardsEventList);
+                refreshApex(this.wiredInactiveRewardsEventList);
                 refreshApex(this.wiredRewardsResult);
                 refreshApex(this.wiredIneligibleRewardsResult);
+                this.isLoading = false;
             })
             .catch((error) => {
                 this.dispatchEvent(
@@ -397,6 +430,7 @@ export default class ContactRewards extends LightningElement {
                         variant: 'error'
                     })
                 );
+                this.isLoading = false;
             });
     }
 
@@ -408,6 +442,7 @@ export default class ContactRewards extends LightningElement {
     }
 
     deleteRecord() {
+        this.isLoading = true;
         deleteRecord(this.selectedRecord)
             .then(() => {
                 this.dispatchEvent(
@@ -418,11 +453,46 @@ export default class ContactRewards extends LightningElement {
                     })
                 );
                 refreshApex(this.wiredRewardsEventList);
+                refreshApex(this.wiredInactiveRewardsEventList);
                 refreshApex(this.wiredRewardsResult);
                 refreshApex(this.wiredIneligibleRewardsResult);
+                this.isLoading = false;
             })
             .catch(error => {
             })
         }
+    
+    handleReactivateRewardsEvent() {
+        this.isLoading = true;
+        const fields = {};
+        fields[ID_FIELD.fieldApiName] = this.selectedRecord;
+        fields[ACTIVEEVENT_FIELD.fieldApiName] = true;
+
+        const recordInput = { fields };
+        updateRecord(recordInput)
+                    .then(() => {
+                        this.dispatchEvent(
+                            new ShowToastEvent({
+                                title: 'Success',
+                                message: 'Rewards Event has been reactivated',
+                                variant: 'success'
+                            })
+                        );
+                        this.isLoading = false;
+                        refreshApex(this.wiredInactiveRewardsEventList);
+                        refreshApex(this.wiredRewardsEventList);
+                        return refreshApex(this.contact);
+                    })
+                    .catch(error => {
+                        this.dispatchEvent(
+                            new ShowToastEvent({
+                                title: 'Error creating record',
+                                message: error.body.message,
+                                variant: 'error'
+                            })
+                        );
+                        this.isLoading = false;
+                    });
+    }
 
 }

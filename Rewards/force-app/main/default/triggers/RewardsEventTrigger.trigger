@@ -9,7 +9,7 @@ trigger RewardsEventTrigger on Rewards_Event__c (before insert, after insert, be
             RewardsEventHandler.verifyActiveAccount(Trigger.new);
             RewardsEventHandler.setRunningBalance(Trigger.new);
         } else if (Trigger.isUpdate) {
-            RewardsEventHandler.verifyActiveAccount(Trigger.new);
+            // RewardsEventHandler.verifyActiveAccount(Trigger.new);
         } 
     } else if (Trigger.isAfter) {
         if (Trigger.isInsert || Trigger.isUpdate) {

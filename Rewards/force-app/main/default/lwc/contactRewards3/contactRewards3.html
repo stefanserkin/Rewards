@@ -1,0 +1,217 @@
+<template>
+    <div class="spinner">
+        <template if:true={isLoading}>
+             <lightning-spinner alternative-text="Loading" variant="brand" size="large">
+             </lightning-spinner>
+        </template>
+    </div>
+    <div class="container">
+    <lightning-card>
+        <h3 slot="title">
+            <img src={rewardsIcon} alt="Rewards Icon" class="customIcon">
+            {pageTitle}
+        </h3>
+    
+        <template if:false={isActive}>
+            <div class="slds-align_absolute-center">
+                <lightning-button variant="success" label="Activate Rewards Account" value="details" onclick={handleActivate} class="slds-m-left_x-small">
+                </lightning-button>
+            </div>
+        </template>
+        <!-- Modal welcome message -->
+        <template if:true={isModalOpen}>
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <!-- Modal Header -->
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                            <lightning-icon icon-name="utility:close"
+                                alternative-text="close"
+                                variant="inverse"
+                                size="small" ></lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{modalHeader}</h2>
+                    </header>
+                    <!-- Modal Body -->
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <p>{modalBody}</p>
+                    </div>
+                    <!-- Modal Footer -->
+                    <footer class="slds-modal__footer">
+                        <template if:true={isModalActivate}>
+                            <button class="slds-button slds-button_brand" onclick={closeActivateModal} title="OK">OK</button>
+                        </template>
+                        <template if:true={isModalRedeem}>
+                            <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">Cancel</button>
+                            <button class="slds-button slds-button_brand" onclick={closeRedeemModal} title="Redeem">Redeem</button>
+                        </template>
+                        <template if:true={isModalDeactivate}>
+                            <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">Cancel</button>
+                            <button class="slds-button slds-button_brand" onclick={closeDeactivateModal} title="OK">OK</button>
+                        </template>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <template if:true={isActive}>
+            <!-- Buttons -->
+            <div class="c-container slds-align_absolute-center">
+                <lightning-layout horizontal-align="spread">
+                    <lightning-layout-item padding="around-small">
+                        <lightning-button variant="destructive-text" label="Deactivate Account" value="hide" onclick={handleDeactivate} class="slds-m-left_x-small">
+                        </lightning-button>
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+                        
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+                        <lightning-button variant="brand" label="Redeem Points" value="redeem" onclick={handleRedeem} class="slds-m-left_x-small">
+                        </lightning-button>
+                        <lightning-button variant="brand" label="Add Points" value="adhoc" onclick={handleAdhoc} class="slds-m-left_x-small">
+                        </lightning-button>
+                        <lightning-button variant="brand-outline" label="Recent Activity" value="adhoc" onclick={handleTable} class="slds-m-left_x-small">
+                        </lightning-button>
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+
+                    </lightning-layout-item>
+                    <lightning-layout-item padding="around-small">
+                        <lightning-button variant="destructive-text" label="Delete Event" value="delete" icon-name="utility:delete" onclick={deleteRecord} class="slds-m-left_x-small">
+                        </lightning-button>
+                    </lightning-layout-item>
+                </lightning-layout>
+            </div>
+
+            <!-- Recent Rewards Events datatable -->
+            <template if:true={isTable}>
+                <lightning-card title={contactAndPointsLabel}>
+                    <lightning-datatable 
+                    data={rewardsEventList} columns={cols} key-field="Id" 
+                    max-row-selection="1" onrowselection={handleSelection} >
+                    </lightning-datatable>
+                </lightning-card>
+            </template>
+
+            <!-- Ad-Hoc Rewards Event creation -->
+            <template if:true={isAdhoc}>
+                <lightning-card title="Issue Ad-Hoc Points">
+                    <div class="slds-var-m-around_medium" >
+                        <lightning-input
+                            label="Description"
+                            onchange={handleDescriptionChange}
+                            class="slds-var-m-bottom_x-small"
+                            required
+                        ></lightning-input>
+                        <lightning-input
+                            type="number"
+                            label="Points"
+                            onchange={handlePointsChange}
+                            class="slds-var-m-bottom_x-small"
+                            required
+                        ></lightning-input>
+                        <lightning-button
+                            label="Create Points"
+                            variant="brand"
+                            onclick={createPoints}
+                        ></lightning-button>
+                    </div>
+                </lightning-card>
+            </template>
+
+            <!-- Rewards Redemption -->
+
+            <!-- Rewards datatable -->
+            <template if:true={isRedeem}>
+                <lightning-card title={contactAndPointsLabel}>
+                    <!-- Eligible -->
+                    <div class="slds-var-m-around_medium lgc-bg">
+                        <template for:each={rewards} for:item="reward">
+                            <lightning-layout
+                                key={reward.Id}
+                                class="slds-has-dividers_bottom-space"
+                            >
+                                <lightning-layout-item class="slds-item slds-has-dividers_bottom-space">
+                                    <lightning-tile label={reward.Name} href="https://www.mets.com" type="media">
+                                        <lightning-button-icon
+                                            slot="media"
+                                            icon-name="utility:add"
+                                            onclick={handleRewardSelection}
+                                            data-recordid={reward.Id}
+                                            data-points={reward.Cost__c}
+                                            data-description={reward.Name}
+                                        ></lightning-button-icon>
+                                        <ul class="slds-list_horizontal slds-has-dividers_right">
+                                            <li class="slds-item">Cost</li>
+                                            <li class="slds-item">{reward.Cost__c} points</li>
+                                        </ul>
+                                    </lightning-tile>
+                                </lightning-layout-item>
+                            </lightning-layout>
+                        </template>
+                    </div>
+                    <!-- Ineligible -->
+                    <div class="slds-var-m-around_medium lgc-bg">
+                        <template for:each={ineligibleRewards} for:item="ineligibleReward">
+                            <lightning-layout
+                                key={ineligibleReward.Id}
+                                class="slds-has-dividers_bottom-space"
+                            >
+                                <lightning-layout-item class="slds-item slds-has-dividers_bottom-space">
+                                    <lightning-tile label={ineligibleReward.Name} href="https://www.mets.com" type="media">
+                                        <lightning-button-icon
+                                            slot="media"
+                                            icon-name="utility:lock"
+                                        ></lightning-button-icon>
+                                        <ul class="slds-list_horizontal slds-has-dividers_right">
+                                            <li class="slds-item">Cost</li>
+                                            <li class="slds-item">
+                                                {ineligibleReward.Cost__c} points
+                                                <lightning-helptext content="This reward requires more points"></lightning-helptext>
+                                            </li>
+                                        </ul>
+                                    </lightning-tile>
+                                </lightning-layout-item>
+                            </lightning-layout>
+                        </template>
+                    </div>
+                </lightning-card>
+            </template>
+
+            <!-- Placeholder input form for testing rewards redemptions
+            <template if:true={isRedeem}>
+                <lightning-card title="Redeem Points">
+                    <div class="slds-var-m-around_medium" >
+                        <lightning-input
+                            label="Description"
+                            onchange={handleDescriptionChange}
+                            class="slds-var-m-bottom_x-small"
+                        ></lightning-input>
+                        <lightning-input
+                            type="number"
+                            label="Points"
+                            onchange={handlePointsChange}
+                            class="slds-var-m-bottom_x-small"
+                        ></lightning-input>
+                        <lightning-input
+                            type="reward"
+                            label="Reward"
+                            onchange={handleRewardChange}
+                            class="slds-var-m-bottom_x-small"
+                        ></lightning-input>
+                        <lightning-button
+                            label="Redeem Reward"
+                            variant="brand"
+                            onclick={redeemReward}
+                        ></lightning-button>
+                    </div>
+                </lightning-card>
+            </template>
+            -->
+
+        </template>
+    </lightning-card>
+    </div>
+</template>
