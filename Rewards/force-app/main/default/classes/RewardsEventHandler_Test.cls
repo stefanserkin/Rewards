@@ -118,5 +118,40 @@ public class RewardsEventHandler_Test {
         }
         insert reList;
     }
+    
+    @isTest static void deactivateAccount() {
+		String accHHRecTypeId      = Schema.SObjectType.Account.getRecordTypeInfosByName().get('Household Account').getRecordTypeId();
+        String awardRecTypeId      = Schema.SObjectType.Rewards_Event__c.getRecordTypeInfosByName().get('Award').getRecordTypeId();
+        String redemptionRecTypeId = Schema.SObjectType.Rewards_Event__c.getRecordTypeInfosByName().get('Redemption').getRecordTypeId();
+        
+        Account acc = new Account(Name = 'TestAcc Household', RecordTypeId = accHHRecTypeId);
+        insert acc;
+        
+        Contact ct = new Contact(AccountId = acc.Id, FirstName = 'Test', LastName = 'TestAcc', Active_Rewards_Account__c = true);
+        insert ct;
+        
+        Rewards_Event__c re = new Rewards_Event__c(Contact__c = ct.Id, Description__c = 'Test Points Awarded', Points__c = 4444, Active__c = true, RecordTypeId = awardRecTypeId);
+        insert re;
+        
+        Reward__c reward = new Reward__c(Name = 'Test Reward', Cost__c = 444);
+        insert reward;
+        
+        Rewards_Event__c re2 = new Rewards_Event__c(Contact__c = ct.Id, Description__c = 'Test Points Awarded', Points__c = 444, Reward__c = reward.Id, RecordTypeId = redemptionRecTypeId);
+        insert re2;
+        
+        Test.startTest();
+        ct.Active_Rewards_Account__c = false;
+        update ct;
+        Test.stopTest();
+        
+        Contact ctToVerify = [SELECT Id, Active_Rewards_Account__c, Rewards_Points__c FROM Contact WHERE Id = :ct.Id LIMIT 1];
+        List<Rewards_Event__c> resToVerify = [SELECT Id, Points__c FROM Rewards_Event__c WHERE Contact__c = :ct.Id AND Description__c LIKE 'Account Deactivated'];
+        
+        System.assertEquals(false, ctToVerify.Active_Rewards_Account__c, 
+        	'Rewards account is still active');
+        System.assertEquals(1, resToVerify.size(), 
+        	'Received too many equalizing rewards events');
+
+    }
 
 }
