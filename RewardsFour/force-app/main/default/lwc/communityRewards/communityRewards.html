@@ -1,0 +1,34 @@
+<template>
+    <lightning-card>
+        <h1 slot="title">{userFirstName}'s JCCSF Rewards</h1>
+        <!-- SPINNER ON LOAD -->
+        <lightning-spinner if:true={isLoading} alternative-text="Loading" variant="brand" size="large"></lightning-spinner>
+        <!-- BEGIN TABSET -->
+        <lightning-tabset variant="scoped">
+            <!-- WELCOME TAB WITH REWARDS INFORMATION -->
+            <lightning-tab label="Welcome" value="1" onactive={handleActiveTab}>
+                <lightning-button variant="brand" label="Log type of contactId var to console" value="contactId type" onclick={showMeYoType} class="slds-m-left_x-small"></lightning-button>
+                <p>
+                    User Id: {userId} <br /> Contact Id: {contactId}<br /><br />
+                    I'm baby meh raw denim pickled authentic street art blog, brooklyn lumbersexual lyft selvage. Hoodie asymmetrical neutra blog etsy chillwave swag tousled portland church-key hot chicken bespoke mumblecore paleo. Retro shoreditch scenester brunch iceland small batch. Microdosing truffaut keffiyeh, la croix direct trade pitchfork keytar fingerstache bicycle rights PBR&B. Woke quinoa bicycle rights vinyl literally photo booth cliche messenger bag af.
+                </p>
+                <p>
+                    Austin hot chicken mlkshk cray, shabby chic small batch intelligentsia poutine unicorn green juice tote bag everyday carry tbh umami. Church-key chia kickstarter, portland vape next level asymmetrical master cleanse lomo flannel. Man bun fingerstache pour-over, master cleanse vice neutra mixtape iPhone chambray you probably haven't heard of them intelligentsia forage hell of listicle narwhal. Deep v blog squid tattooed, cardigan man braid enamel pin typewriter 90's gluten-free asymmetrical intelligentsia sustainable.
+                </p>
+                <p>
+                    Umami VHS tumeric, tousled messenger bag salvia post-ironic hexagon roof party PBR&amp;B green juice. Hot chicken mlkshk mumblecore tousled microdosing flannel sustainable. Freegan gluten-free beard wayfarers pitchfork williamsburg, gochujang +1 tousled everyday carry chia. Locavore austin VHS helvetica PBR&amp;B godard salvia.
+                </p>
+            </lightning-tab>
+
+            <!-- DISPLAY OF USER REWARDS POINTS HISTORY -->
+            <lightning-tab label="Points History" value="2" onactive={handleActiveTab}>
+                TODO - DISPLAY OF USER REWARDS POINTS HISTORY
+            </lightning-tab>
+
+            <!-- BROWSE AND REDEEM REWARDS -->
+            <lightning-tab label="Rewards" value="3" onactive={handleActiveTab}>
+                TODO - BROWSE AND REDEEM REWARDS
+            </lightning-tab>
+        </lightning-tabset>
+    </lightning-card>
+</template>
