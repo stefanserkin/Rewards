@@ -1,3 +1,4 @@
+<!-- sldsValidatorIgnore -->
 <template>
     <lightning-card>
         <h1 slot="title">{userFirstName}'s JCCSF Rewards</h1>
@@ -8,6 +9,7 @@
             <!-- WELCOME TAB WITH REWARDS INFORMATION -->
             <lightning-tab label="Welcome" value="1" onactive={handleActiveTab}>
                 <lightning-button variant="brand" label="Log type of contactId var to console" value="contactId type" onclick={showMeYoType} class="slds-m-left_x-small"></lightning-button>
+                <br />
                 <p>
                     User Id: {userId} <br /> Contact Id: {contactId}<br /><br />
                     I'm baby meh raw denim pickled authentic street art blog, brooklyn lumbersexual lyft selvage. Hoodie asymmetrical neutra blog etsy chillwave swag tousled portland church-key hot chicken bespoke mumblecore paleo. Retro shoreditch scenester brunch iceland small batch. Microdosing truffaut keffiyeh, la croix direct trade pitchfork keytar fingerstache bicycle rights PBR&B. Woke quinoa bicycle rights vinyl literally photo booth cliche messenger bag af.
@@ -22,12 +24,70 @@
 
             <!-- DISPLAY OF USER REWARDS POINTS HISTORY -->
             <lightning-tab label="Points History" value="2" onactive={handleActiveTab}>
-                TODO - DISPLAY OF USER REWARDS POINTS HISTORY
+                <lightning-card>
+                    <lightning-datatable 
+                    data={rewardsEventList} columns={cols} key-field="Id" 
+                    max-row-selection="1" onrowselection={handleSelection} >
+                    </lightning-datatable>
+                </lightning-card>
             </lightning-tab>
 
             <!-- BROWSE AND REDEEM REWARDS -->
             <lightning-tab label="Rewards" value="3" onactive={handleActiveTab}>
-                TODO - BROWSE AND REDEEM REWARDS
+                <!-- Eligible -->
+                <div class="slds-var-m-around_medium lgc-bg">
+                    <template for:each={rewards} for:item="reward">
+                        <lightning-layout
+                            key={reward.Id}
+                            class="slds-has-dividers_bottom-space"
+                        >
+                            <lightning-layout-item class="slds-item slds-has-dividers_bottom-space">
+                                <lightning-tile label={reward.Name} href={reward.Relative_URL__c} type="media" class="slds-p-top_x-small">
+                                    <lightning-button-icon
+                                        slot="media"
+                                        icon-name="utility:add"
+                                        onclick={handleRewardSelection}
+                                        data-recordid={reward.Id}
+                                        data-points={reward.Cost__c}
+                                        data-description={reward.Name}
+                                    ></lightning-button-icon>
+                                    <ul class="slds-list_horizontal slds-has-dividers_right">
+                                        <li class="slds-item">Cost</li>
+                                        <li class="slds-item">{reward.Cost__c} points</li>
+                                    </ul>
+                                </lightning-tile>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                    </template>
+                </div>
+            
+                <!-- Ineligible -->
+                <div class="slds-var-m-around_medium lgc-bg">
+                    <template for:each={ineligibleRewards} for:item="ineligibleReward">
+                        <lightning-layout
+                            key={ineligibleReward.Id}
+                            class="slds-has-dividers_bottom-space"
+                        >
+                            <lightning-layout-item class="slds-item slds-has-dividers_bottom-space">
+                                <lightning-tile label={ineligibleReward.Name} href={ineligibleReward.Relative_URL__c} type="media" class="slds-p-top_x-small">
+                                    <lightning-button-icon
+                                        slot="media"
+                                        icon-name="utility:lock"
+                                        onclick={handleIneligibleRewardSelection}
+                                    ></lightning-button-icon>
+                                    <ul class="slds-list_horizontal slds-has-dividers_right">
+                                        <li class="slds-item">Cost</li>
+                                        <li class="slds-item">
+                                            {ineligibleReward.Cost__c} points
+                                            <lightning-helptext content="More points are needed to unlock this reward"></lightning-helptext>
+                                        </li>
+                                    </ul>
+                                </lightning-tile>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                    </template>
+                </div>
+                
             </lightning-tab>
         </lightning-tabset>
     </lightning-card>
