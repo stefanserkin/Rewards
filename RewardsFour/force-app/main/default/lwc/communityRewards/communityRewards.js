@@ -1,12 +1,17 @@
 import { LightningElement, wire } from 'lwc';
-import { getRecord, getFieldValue } from 'lightning/uiRecordApi';
-import getEligibleRewards from '@salesforce/apex/RewardsController.getEligibleRewardsForUser';
-import getIneligibleRewards from '@salesforce/apex/RewardsController.getIneligibleRewardsForUser';
-import getUserRewardsEvents from '@salesforce/apex/RewardsEventController.getUserRewardsEvents';
+import { getRecord } from 'lightning/uiRecordApi';
+import getEligibleRewards from '@salesforce/apex/RewardsController.getEligibleRewards';
+import getIneligibleRewards from '@salesforce/apex/RewardsController.getIneligibleRewards';
+import getContactRewardsEvents from '@salesforce/apex/RewardsEventController.getContactRewardsEvents';
 
 import USER_ID from '@salesforce/user/Id';
+// User
 import NAME_FIELD from '@salesforce/schema/User.FirstName';
 import CONTACTID_FIELD from '@salesforce/schema/User.ContactId';
+// Contact
+import ACTIVEREWARDS_FIELD from '@salesforce/schema/Contact.Active_Rewards_Account__c';
+import CTPOINTS_FIELD from '@salesforce/schema/Contact.Rewards_Points__c';
+// Rewards Event
 import REWARDSEVENT_OBJECT from '@salesforce/schema/Rewards_Event__c';
 import POINTS_FIELD from '@salesforce/schema/Rewards_Event__c.Points__c';
 import DESCRIPTION_FIELD from '@salesforce/schema/Rewards_Event__c.Description__c';
@@ -17,8 +22,6 @@ import ACTIVEEVENT_FIELD from '@salesforce/schema/Rewards_Event__c.Active__c';
 import RELATEDID_FIELD from '@salesforce/schema/Rewards_Event__c.Related_Entity_ID__c';
 import REDEMPTION_RECORDTYPEID_FIELD from '@salesforce/schema/Rewards_Event__c.RecordTypeId';
 
-const fields = [NAME_FIELD, CONTACTID_FIELD];
-
 const COLS = [
     { label: 'Date', fieldName: 'Date__c', initialWidth: 210, type: 'date', typeAttributes:{
         year: "numeric",
@@ -28,47 +31,76 @@ const COLS = [
         minute: "2-digit"
     }},
     { label: 'Description', fieldName: 'Description__c', type: 'text' },
-    { label: 'Type', fieldName: 'Type__c', initialWidth: 100, type: 'text' },
-    { label: 'Points', fieldName: 'Points__c', initialWidth: 80, type: 'number' },
-    { label: 'Balance', fieldName: 'Points_Balance__c', initialWidth: 90, type: 'number' }
+    { label: 'Type', fieldName: 'Type__c', initialWidth: 110, type: 'text' },
+    { label: 'Points', fieldName: 'Points__c', initialWidth: 110, type: 'number' },
+    { label: 'Balance', fieldName: 'Points_Balance__c', initialWidth: 110, type: 'number' }
 ];
 
 export default class CommunityRewards extends LightningElement {
-
+    // Display control
     isLoading = false;
     activeTab = '1';
+    // User Id
     userId = USER_ID;
-    cols = COLS;
-
+    // Contact fields from wire service
+    name;
+    contactId;
+    isActive;
+    contact;
+    ctPoints;
+    // Rewards data from wire service
     rewards;
     wiredRewardsResult;
     ineligibleRewards;
     wiredIneligibleRewardsResult;
-
-    wiredRewardsEventList
+    // Rewards Event formatted columns
+    cols = COLS;
+    // Rewards Events data from wire service
+    wiredRewardsEventList;
     rewardsEventList = [];
 
     error;
 
     handleActiveTab(event) {
         const tab = event.target;
-        this.activeTab = event.target.value;
+        this.activeTab = tab.value;
     }
 
     // Wire user
-    @wire(getRecord, { recordId: '$userId', fields })
-    user;
-
-    get userFirstName() {
-        return getFieldValue(this.user.data, NAME_FIELD);
+    @wire(getRecord, {
+        recordId: USER_ID,
+        fields: [NAME_FIELD, CONTACTID_FIELD]
+    }) wireuser({
+        error,
+        data
+    }) {
+        if (error) {
+           this.error = error ; 
+        } else if (data) {
+            this.name = data.fields.FirstName.value;
+            this.contactId = data.fields.ContactId.value;
+        }
     }
 
-    get contactId() {
-        return getFieldValue(this.user.data, CONTACTID_FIELD);
+    // Wire contact
+    @wire(getRecord, {
+        recordId: '$contactId',
+        fields: [ACTIVEREWARDS_FIELD, CTPOINTS_FIELD]
+    }) wireContact({
+        error,
+        data
+    }) {
+        window.console.log('contactId is :: ' + this.contactId);
+        if (error) {
+            this.error = error ; 
+        } else if (data) {
+            this.isActive = data.fields.Active_Rewards_Account__c.value;
+            this.ctPoints = data.fields.Rewards_Points__c.value;
+        }
     }
 
     // Eligible vs ineligible rewards data
-    @wire(getEligibleRewards, { recordId: '$userId' })
+    @wire(getEligibleRewards, { recordId: '$contactId' })
     wiredRewards(result) {
         this.wiredRewardsResult = result;
 
@@ -81,7 +113,7 @@ export default class CommunityRewards extends LightningElement {
         }
     }
     
-    @wire(getIneligibleRewards, { recordId: '$userId' })
+    @wire(getIneligibleRewards, { recordId: '$contactId' })
     wiredIneligibleRewards(result) {
         this.wiredIneligibleRewardsResult = result;
 
@@ -93,8 +125,8 @@ export default class CommunityRewards extends LightningElement {
             this.ineligibleRewards = undefined;
         }
     }
-
-    @wire(getUserRewardsEvents, { recordId: '$userId'}) 
+    
+    @wire(getContactRewardsEvents, { recordId: '$contactId'}) 
     reList(result) {
         this.wiredRewardsEventList = result;
 
@@ -110,6 +142,22 @@ export default class CommunityRewards extends LightningElement {
     showMeYoType() {
         window.console.log(typeof this.contactId);
         window.console.log('Type for ' + this.contactId);
+    }
+
+    get title() {
+        return `${this.name}'s JCCSF Rewards`;
+    }
+
+    get pointsTotal() {
+        return `Total Points: ${this.ctPoints}`;
+    }
+
+    get pointsHistoryTabTitle() {
+        return `${this.name}'s Rewards Points History`;
+    }
+
+    get redeemRewardsTabTitle() {
+        return `Reedem Points for Rewards`;
     }
 
 }
