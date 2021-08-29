@@ -5,6 +5,39 @@ p {
 .alignleft {
 	float: left;
 }
+
 .alignright {
 	float: right;
+}
+
+c-reward-tile {
+    min-width: 220px;
+}
+
+.welcome-title {
+    font-size: 30px;
+    color: #03783D;
+    margin: 20px;
+}
+
+.activate-button {
+    --sds-c-button-text-color: #000000;
+    --sds-c-button-brand-color-border: #03783D;
+    --sds-c-button-brand-color-border-hover: purple;
+}
+
+table {
+    border-collapse: collapse;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+  
+th, td {
+    text-align: left;
+    padding: 8px;
+}
+  
+tr:nth-child(even) {
+    background-color: #F9F9F9;
 }

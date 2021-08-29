@@ -1,0 +1,13 @@
+<template>
+    <a onclick={handleRewardSelected}>
+        <div class="tile">
+            <div class="lower-third">
+                <h1 class="truncate">{reward.Name}</h1>
+                <p>Beds: 2 - Baths: 3</p>
+                <p>
+                    <lightning-formatted-number value={reward.Cost__c}></lightning-formatted-number>
+                </p>
+            </div>
+        </div>
+    </a>
+</template>
