@@ -1,0 +1,92 @@
+.c-container {
+    border: none;
+}
+
+.custom-box {
+    text-align: center;
+    background-color: #f4f6f9;
+    padding: 1rem;
+    border: 1px solid #d8dde6;
+}
+
+h3 {
+    font-size: large;
+    margin: 10px;
+}
+
+.alignleft {
+	float: left;
+}
+
+.alignright {
+	float: right;
+}
+
+c-reward-tile {
+    min-width: 220px;
+}
+
+.welcome-title {
+    font-size: x-large;
+    color: #03783D;
+    margin: 20px;
+}
+
+.subtitle {
+    font-size: larger;
+    color: #03783D;
+    margin: 20px;
+}
+
+.activate-button {
+    --sds-c-button-text-color: #000000;
+    --sds-c-button-brand-color-border: #03783D;
+    --sds-c-button-brand-color-border-hover: purple;
+}
+
+table {
+    border-collapse: collapse;
+    width: 80%;
+    margin-left: auto;
+    margin-right: auto;
+}
+  
+th, td {
+    text-align: left;
+    padding: 8px;
+}
+  
+tr:nth-child(even) {
+    background-color: #F9F9F9;
+}
+
+.reward-tile-container {
+    position: relative;
+    text-align: center;
+    color: white;
+}
+
+.reward-tile-container:hover {
+    cursor: pointer;
+}
+
+.eligible {
+    filter: brightness(57%);
+}
+
+.ineligible {
+    filter: brightness(25%) grayscale(1);
+}
+
+.reward-tile {
+    width: 300px;
+    padding-bottom: 20px;
+}
+
+.reward-tile-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: large;
+}

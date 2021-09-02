@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LightningComponentBundle xmlns="http://soap.sforce.com/2006/04/metadata">
+    <apiVersion>52.0</apiVersion>
+    <isExposed>true</isExposed>
+    <masterLabel>Community Rewards</masterLabel>
+    <targets>
+        <target>lightningCommunity__Default</target>
+        <target>lightningCommunity__Page</target>
+    </targets>
+    <targetConfigs>
+        <targetConfig targets="lightningCommunity__Default">
+            <property
+                label="Component Header" 
+                name="rewardsTitle" 
+                type="String" 
+                default="Rewards" 
+                description="Modify the component title with your branded title for the Rewards program." 
+                required="true"
+            />
+            <property 
+                label="Include Link to Learn More" 
+                name="includeLinkToMoreInfo" 
+                type="Boolean" 
+            />
+            <property 
+                label="Learn More URL"
+                name="moreInfoURL" 
+                type="String"
+                description="If including link to learn more, enter destination URL here" 
+            />
+            <property 
+                label="Learn More Link Text"
+                name="moreInfoURLText" 
+                type="String"
+                default="Learn more about earning rewards and how to redeem your points."
+                description="If including link to learn more, enter link text here" 
+            />
+        </targetConfig>
+    </targetConfigs>
+</LightningComponentBundle>

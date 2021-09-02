@@ -1,0 +1,172 @@
+<!-- sldsValidatorIgnore -->
+<template>
+    <lightning-card>
+        <h1 slot="title" class="welcome-title">{rewardsTitle}</h1>
+        <div slot="actions" class="custom-box">Points Total:&nbsp;
+            <lightning-formatted-number value={ctPoints}></lightning-formatted-number></div>
+        <!--
+        <div class="c-container">
+            <lightning-layout horizontal-align="spread">
+                <lightning-layout-item padding="around-small">
+                    <span class="welcome-title">{rewardsTitle}</span>
+                </lightning-layout-item>
+                <lightning-layout-item padding="around-small">
+                    <div class="custom-box">
+                        Points Total:&nbsp;
+                        <lightning-formatted-number value={ctPoints}></lightning-formatted-number>
+                    </div>
+                </lightning-layout-item>
+            </lightning-layout>
+        </div>
+        -->
+        <div style="clear: both;"></div>
+
+        <!-- SPINNER ON LOAD -->
+        <lightning-spinner if:true={isLoading} alternative-text="Loading" variant="brand" size="large"></lightning-spinner>
+
+        <!-- MODAL -->
+        <template if:true={isModalOpen}>
+            <section role="dialog" tabindex="-1" aria-labelledby="modal-heading-01" aria-modal="true" aria-describedby="modal-content-id-1" class="slds-modal slds-fade-in-open">
+                <div class="slds-modal__container">
+                    <!-- MODAL HEADER -->
+                    <header class="slds-modal__header">
+                        <button class="slds-button slds-button_icon slds-modal__close slds-button_icon-inverse" title="Close" onclick={closeModal}>
+                            <lightning-icon icon-name="utility:close"
+                                alternative-text="close"
+                                variant="inverse"
+                                size="small" >
+                            </lightning-icon>
+                            <span class="slds-assistive-text">Close</span>
+                        </button>
+                        <h2 id="modal-heading-01" class="slds-text-heading_medium slds-hyphenate">{modalHeader}</h2>
+                    </header>
+                    <!-- MODAL BODY -->
+                    <div class="slds-modal__content slds-p-around_medium" id="modal-content-id-1">
+                        <p>{modalBody}</p>
+                    </div>
+                    <!-- MODAL FOOTER -->
+                    <footer class="slds-modal__footer">
+                        <template if:true={isModalRedeem}>
+                            <button class="slds-button slds-button_neutral" onclick={closeModal} title="Cancel">Cancel</button>
+                            <button class="slds-button slds-button_brand" onclick={closeRedeemModal} title="Redeem">Confirm</button>
+                        </template>
+                    </footer>
+                </div>
+            </section>
+            <div class="slds-backdrop slds-backdrop_open"></div>
+        </template>
+
+        <!-- BEGIN TABSET -->
+        <lightning-tabset variant="scoped">
+            <!-- WELCOME TAB WITH REWARDS INFORMATION -->
+            <template if:false={isLoading}>
+                <lightning-tab label="Welcome" value="1" onactive={handleActiveTab} if:false={isActive}>
+                    <h1 class="welcome-title">YOU’VE EARNED IT!</h1>
+                    <p>
+                        You’re dedicated to staying fit at the JCCSF. With JCCSF Perks, your hard work and loyalty pay off in exclusive rewards, like personal training, spa packages, Pilates sessions or parking, to name just a few.                </p>
+                    <p>
+                        You earn 250 points just by joining the JCCSF Perks program and you keep accruing them by coming to the gym and checking in with your Membership ID card. The more you use the JCCSF Fitness Center and programs, the more points you accumulate.                </p>
+                    <p>
+                        It’s free, quick and easy to sign up. Every check-in earns you points.
+                    </p>
+                    <div class="slds-align_absolute-center">
+                        <lightning-button variant="brand-outline" label="GET STARTED RIGHT NOW!" value="details" onclick={handleActivate} class="activate-button">
+                        </lightning-button>
+                    </div>
+                </lightning-tab>
+            </template>
+            
+
+            <template if:true={isActive}>
+
+                <!-- DISPLAY OF USER REWARDS POINTS HISTORY -->
+                <lightning-tab label="Points History" value="2" onactive={handleActiveTab}>
+                    <lightning-card>
+                        <h1 slot="title" class="subtitle">{pointsHistoryTabTitle}</h1>
+                        <lightning-datatable data={rewardsEventsPerPage} columns={cols} key-field="Id" hide-checkbox-column >
+                        </lightning-datatable>
+                        <br />
+                        <!-- NAVIGATION -->
+                        <lightning-layout horizontal-align="space">
+                            <lightning-layout-item flexibility="auto">
+                                <lightning-button label="Previous" icon-name="utility:chevronleft" onclick={previousHandler}>
+                                </lightning-button>
+                            </lightning-layout-item>
+                            <lightning-layout-item flexibility="auto">
+                                Page {page} of {totalPages}
+                            </lightning-layout-item>
+                            <lightning-layout-item flexibility="auto">
+                                <lightning-button label="Next" icon-name="utility:chevronright" icon-position="right"
+                                    onclick={nextHandler}></lightning-button>
+                            </lightning-layout-item>
+                        </lightning-layout>
+                    </lightning-card>
+                </lightning-tab>
+
+                <!-- BROWSE AND REDEEM REWARDS -->
+                <lightning-tab label="Rewards" value="3" onactive={handleActiveTab}>
+                    <lightning-card>
+                        <h1 slot="title" class="subtitle">{redeemRewardsTabTitle}</h1>
+                        <!-- ELIGIBLE REWARDS -->
+                        <div class="slds-var-m-around_medium lgc-bg">
+                            <lightning-layout multiple-rows=true>
+                                <template for:each={rewards} for:item="reward">
+                                    <lightning-layout-item key={reward.Id} class="slds-has-dividers_bottom-space slds-size_1-of-3">
+                                        <div class="reward-tile-container">
+                                            <img src={reward.Image_URL__c} 
+                                                onclick={handleRewardSelection} 
+                                                data-recordid={reward.Id}
+                                                data-points={reward.Cost__c}
+                                                data-description={reward.Name}
+                                                class="reward-tile eligible"
+                                            />
+                                            <div class="reward-tile-text"
+                                                onclick={handleRewardSelection} 
+                                                data-recordid={reward.Id}
+                                                data-points={reward.Cost__c}
+                                                data-description={reward.Name}
+                                            >
+                                            {reward.Name}<br />
+                                            Cost: {reward.Cost__c} pts
+                                            </div>
+                                        </div>
+                                    </lightning-layout-item>
+                                </template>
+                            </lightning-layout>
+                        </div>
+                        <!-- INELIGIBLE REWARDS -->
+                        <div class="slds-var-m-around_medium lgc-bg">
+                            <h1 if:true={hasIneligibleRewards} class="subtitle">Keep earning points to be eligible for these rewards!</h1>
+                            <lightning-layout multiple-rows=true>
+                                <template for:each={ineligibleRewards} for:item="ineligibleReward">
+                                    <lightning-layout-item key={ineligibleReward.Id} class="slds-has-dividers_bottom-space slds-size_1-of-3">
+                                        <div class="reward-tile-container">
+                                            <img src={ineligibleReward.Image_URL__c}
+                                                onclick={handleIneligibleRewardSelection}
+                                                class="reward-tile ineligible"
+                                            />
+                                            <div class="reward-tile-text"
+                                                onclick={handleIneligibleRewardSelection}
+                                            >
+                                            {ineligibleReward.Name}
+                                            <br />
+                                            Cost: {ineligibleReward.Cost__c} pts
+                                            </div>
+                                        </div>
+                                    </lightning-layout-item>
+                                </template>
+                            </lightning-layout>
+                        </div>
+                    </lightning-card>
+                    
+                </lightning-tab>
+
+            </template>
+        </lightning-tabset>
+        <p slot="footer" if:true={includeLinkToMoreInfo}>
+            <a href={moreInfoURL} target="_blank">
+                {moreInfoURLText}
+            </a>
+        </p>
+    </lightning-card>
+</template>
